@@ -34,6 +34,7 @@ h2 {
     padding: 10px;
     border-radius: 5px;
     background-color: #f9f9f9;
+    min-height: 80px;
 }
 textarea {
     width: 100%;
@@ -62,16 +63,18 @@ button:hover {
     font-size: 20px;
     color: #333;
 }
+.kirmizi {
+    color: red;
+}
 </style>
 </head>
 <body>
 <div class="container">
     <h2>Yazma Hızı Testi</h2>
-    <div class="yazi" id="basla">
-        Furkan İbrahimin burnunu ıssırdı ve yedi. Yedikten sonra iyice çiğnedi, çiğnerken boğazında kalmamasına dikkat etti, eğer boğazında kalsaydı ölebilirdi. Ama boğazında kalmadığı için ölmedi işte bu kadar basitti. Bunu hazmedemeyen İbrahim Furkanı şamarladı, şamarlanan Furkan İbrahimin şamar attığı elini koparıp yedi. Yerken iyice kemirdi tadını beğenen Furkan İbrahimin tamamını yedi. 
-    </div>
+    <div class="yazi" id="basla">Yükleniyor...</div>
     <textarea id="userInput" placeholder="YAZ LAN!"></textarea>
     <button onclick="Hizihesapla()">Hızı Kontrol Et</button>
+    <button onclick="YeniYazi()">Yazıyı Yenile</button>
     <div class="sonuc" id="sonuc"></div>
 </div>
 <script>
@@ -79,6 +82,24 @@ let baslangicZamani;
 document.getElementById('userInput').addEventListener('focus', () => {
     baslangicZamani = new Date().getTime();
 });
+
+let yazilar = [];
+fetch('yazilar.txt')
+    .then(response => response.text())
+    .then(data => {
+        yazilar = data.split('\n').filter(yazi => yazi.trim() !== '');
+        YeniYazi();
+    });
+
+function YeniYazi() {
+    if (yazilar.length > 0) {
+        const rastgeleYazi = yazilar[Math.floor(Math.random() * yazilar.length)];
+        document.getElementById('basla').innerText = rastgeleYazi;
+        document.getElementById('userInput').value = '';
+        document.getElementById('sonuc').innerHTML = '';
+    }
+}
+
 function Hizihesapla() {
     const bitisZamani = new Date().getTime();
     const gecenSure = (bitisZamani - baslangicZamani) / 1000;
@@ -87,11 +108,22 @@ function Hizihesapla() {
     const kelimeSayisi = orijinalMetin.split(' ').length;
     const yazmaHizi = Math.round((kelimeSayisi / gecenSure) * 60);
     const sonuc = document.getElementById('sonuc');
-    if (kullaniciMetni === orijinalMetin) {
-        sonuc.innerHTML = `Yazma hızınız <strong>${yazmaHizi} WPM</strong>.`;
-    } else {
-        sonuc.innerHTML = `yazdiginiz yazi uyusmuyor.`;
+
+    let hataSayisi = 0;
+    let goruntulenecekMetin = '';
+
+    for (let i = 0; i < orijinalMetin.length; i++) {
+        if (kullaniciMetni[i] !== orijinalMetin[i]) {
+            goruntulenecekMetin += `<span class="kirmizi">${orijinalMetin[i] || ''}</span>`;
+            hataSayisi++;
+        } else {
+            goruntulenecekMetin += orijinalMetin[i];
+        }
     }
+
+    document.getElementById('basla').innerHTML = goruntulenecekMetin;
+
+    sonuc.innerHTML = `Yazma hızınız <strong>${yazmaHizi} WPM</strong>. Yanlış yazılan karakter sayısı: <strong>${hataSayisi}</strong>.`;
 }
 </script>
 </body>
